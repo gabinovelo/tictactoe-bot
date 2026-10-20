@@ -6,10 +6,16 @@ class TicTacToe:
         (0, 4, 8), (2, 4, 6),               # diagonais
     ]
 
-    def __init__(self):
+    def __init__(self, first_player: str = "X"):
+        if first_player not in ("X", "O"):
+            raise ValueError(f"invalid player: {first_player}")
+
         self._board = [" "] * 9
-        self._current_player = "X"
+        self._current_player = first_player
         self._history = []  # pilha que guarda a ordem das jogadas      
+
+    def board(self) -> list[str]:
+        return list(self._board)  # cópia: quem chama não altera o jogo
 
     def current_player(self) -> str:
         return self._current_player
@@ -54,6 +60,14 @@ class TicTacToe:
         for a, b, c in self.WINNING_LINES:
             if self._board[a] == self._board[b] == self._board[c] != " ":
                 return self._board[a]
+
+        return None
+
+    def winning_line(self) -> tuple[int, int, int] | None:
+        for line in self.WINNING_LINES:
+            a, b, c = line
+            if self._board[a] == self._board[b] == self._board[c] != " ":
+                return line
 
         return None
 
