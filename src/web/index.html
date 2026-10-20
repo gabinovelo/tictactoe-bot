@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Jogo da velha</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="corner">
+    <label class="select-wrap">
+      <span class="sr-only">Dificuldade</span>
+      <select id="level"></select>
+    </label>
+    <button id="gear" class="icon-btn" aria-label="Configurações" aria-expanded="false" aria-controls="panel">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></svg>
+    </button>
+  </header>
+
+  <main>
+    <div id="board" class="board" role="grid" aria-label="Tabuleiro"></div>
+    <p id="status" class="status" aria-live="polite"></p>
+    <p id="stats" class="stats" hidden></p>
+    <button id="new-match" class="primary">Nova partida</button>
+  </main>
+
+  <div id="backdrop" class="backdrop" hidden></div>
+  <aside id="panel" class="panel" hidden aria-label="Configurações">
+    <div class="panel-head">
+      <h2>Configurações</h2>
+      <button id="close-panel" class="icon-btn" aria-label="Fechar">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+
+    <section>
+      <h3>Essenciais</h3>
+      <label class="row">
+        <span>Modo escuro</span>
+        <input type="checkbox" class="switch" id="dark">
+      </label>
+      <div class="row">
+        <span id="starter-label">Quem começa</span>
+        <div class="segmented" role="radiogroup" aria-labelledby="starter-label">
+          <label><input type="radio" name="starter" value="human" checked><span>Você</span></label>
+          <label><input type="radio" name="starter" value="bot"><span>Bot</span></label>
+        </div>
+      </div>
+      <div class="row">
+        <span id="symbol-label">Seu símbolo</span>
+        <div class="segmented" role="radiogroup" aria-labelledby="symbol-label">
+          <label><input type="radio" name="symbol" value="X" checked><span>X</span></label>
+          <label><input type="radio" name="symbol" value="O"><span>O</span></label>
+        </div>
+      </div>
+      <label class="row" data-option="alphabeta">
+        <span>Poda alfa-beta</span>
+        <input type="checkbox" class="switch" id="alphabeta">
+      </label>
+    </section>
+
+    <section>
+      <h3>Demonstração do minimax</h3>
+      <div data-option="show_analysis">
+        <label class="row">
+          <span>Mostrar avaliação das casas</span>
+          <input type="checkbox" class="switch" id="show-analysis">
+        </label>
+        <p class="hint">
+          Na sua vez, cada casa vazia mostra o valor do minimax para você:
+          <span class="chip win">+ vitória</span>
+          <span class="chip draw">0 empate</span>
+          <span class="chip loss">− derrota</span>
+        </p>
+      </div>
+      <div data-option="search_stats">
+        <label class="row">
+          <span>Estatísticas da busca</span>
+          <input type="checkbox" class="switch" id="show-stats">
+        </label>
+        <p class="hint">Estados visitados, profundidade e tempo de cada jogada do bot.</p>
+      </div>
+      <div data-option="random_tiebreak">
+        <label class="row">
+          <span>Desempate aleatório</span>
+          <input type="checkbox" class="switch" id="tiebreak" checked>
+        </label>
+        <p class="hint">Desligado, o bot escolhe sempre a primeira entre as jogadas de mesmo valor.</p>
+      </div>
+      <div data-option="bot_vs_bot">
+        <label class="row">
+          <span>Bot contra bot</span>
+          <input type="checkbox" class="switch" id="bvb">
+        </label>
+        <div id="bvb-levels" class="sub" hidden>
+          <label class="row"><span>Nível do X</span><span class="select-wrap"><select id="x-level"></select></span></label>
+          <label class="row"><span>Nível do O</span><span class="select-wrap"><select id="o-level"></select></span></label>
+        </div>
+      </div>
+      <div class="row">
+        <span id="speed-label">Velocidade do bot</span>
+        <div class="segmented" role="radiogroup" aria-labelledby="speed-label">
+          <label><input type="radio" name="speed" value="0"><span>Instantâneo</span></label>
+          <label><input type="radio" name="speed" value="500" checked><span>Normal</span></label>
+          <label><input type="radio" name="speed" value="1200"><span>Lento</span></label>
+        </div>
+      </div>
+    </section>
+  </aside>
+
+  <script src="app.js"></script>
+</body>
+</html>

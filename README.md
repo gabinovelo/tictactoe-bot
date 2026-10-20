@@ -2,7 +2,7 @@
 
 Jogo da velha em Python com um bot baseado no algoritmo **minimax**, com quatro níveis de dificuldade. É um projeto acadêmico: o foco é implementar e entender o minimax, e a interface existe para demonstrá-lo.
 
-> **Status:** em desenvolvimento. A lógica do jogo e o bot já funcionam pelo terminal; a camada de partida, a API web e a interface ainda não foram implementadas. Veja o [Roteiro](#roteiro).
+> **Status:** em desenvolvimento. A lógica do jogo e o bot funcionam pelo terminal e pela interface web (Flask). Ainda faltam testes automatizados, o script de simulação e a poda alfa-beta (opcional). Veja o [Roteiro](#roteiro).
 
 ## Sumário
 
@@ -18,12 +18,16 @@ Jogo da velha em Python com um bot baseado no algoritmo **minimax**, com quatro 
 
 ## Como rodar
 
-Requisitos: **Python 3.10 ou superior** (o código usa a sintaxe `str | None`). Ainda não há dependências externas.
+Requisitos: **Python 3.10 ou superior** (o código usa a sintaxe `str | None`). A interface web usa Flask (veja `requirements.txt`).
 
 ```bash
 git clone <url-do-repositorio>
-cd tictactoe-bot/src
-python main.py
+cd tictactoe-bot
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+cd src
+python -m api.app    # interface web em http://127.0.0.1:5000
+python main.py       # ou: jogo no terminal (não precisa de Flask)
 ```
 
 O comando precisa ser executado **de dentro de `src/`**: os imports (`from models...`, `from algorithms...`) são resolvidos a partir dessa pasta. Rodar de outro lugar gera `ModuleNotFoundError`. Para executar outro módulo diretamente, use `-m` a partir de `src/`, por exemplo `python -m algorithms.minimax`.
@@ -38,7 +42,7 @@ As casas são numeradas de 0 a 8:
  6 | 7 | 8
 ```
 
-Hoje o humano joga sempre com **X** e começa; o bot joga com **O** no nível 2. Essas opções estão fixas em `main.py`.
+No terminal, o humano joga sempre com **X** e começa; o bot joga com **O** no nível 2. Essas opções estão fixas em `main.py`. Na interface web, nível, símbolo e quem começa são escolhidos na tela.
 
 ## Estrutura e arquitetura
 
@@ -49,9 +53,17 @@ src/
 ├── main.py              # ponto de entrada: loop de jogo no terminal
 ├── models/
 │   └── tictactoe.py     # regras do jogo (classe TicTacToe)
-└── algorithms/
-    ├── minimax.py       # minimax com profundidade limitada e best_move
-    └── bot.py           # níveis de dificuldade e escolha da jogada do bot
+├── algorithms/
+│   ├── minimax.py       # minimax com profundidade limitada e best_move (inalterado)
+│   ├── search.py        # usos do minimax pela interface: choose_move, evaluate_moves
+│   ├── bot.py           # níveis de dificuldade e escolha da jogada do bot
+│   └── stats.py         # SearchStats e CountingGame (conta estados sem mudar o minimax)
+├── services/
+│   ├── match.py         # classe Match: fluxo de uma partida
+│   └── registry.py      # partidas abertas, guardadas em memória
+├── api/
+│   └── app.py           # API Flask; também serve os arquivos de web/
+└── web/                 # index.html, style.css, app.js
 ```
 
 ### Estrutura planejada
@@ -192,7 +204,7 @@ Cada opção é um interruptor ou seletor simples. As opções da lista "essenci
 |---|---|---|
 | Mostrar avaliação das casas | liga/desliga | Na vez do humano, cada casa vazia mostra o valor que o minimax atribui a ela (do ponto de vista do humano), com cor indicando vitória, empate ou derrota. Mostra o "raciocínio" do algoritmo |
 | Estatísticas da busca | liga/desliga | Após cada jogada do bot, mostra estados visitados, profundidade usada e tempo gasto. Com a poda disponível, permite comparar as duas versões ao vivo |
-| Preferir vitórias rápidas | liga/desliga | Liga ou desliga a penalidade por profundidade na pontuação. Desligada, o bot continua invencível no nível 4, mas pode "enrolar" em vez de vencer na hora, o que ilustra por que a penalidade existe |
+| Preferir vitórias rápidas | liga/desliga | Liga ou desliga a penalidade por profundidade na pontuação. Desligada, o bot continua invencível no nível 4, mas pode "enrolar" em vez de vencer na hora, o que ilustra por que a penalidade existe. **Não implementada:** exigiria alterar o `minimax`, que o grupo decidiu manter intacto |
 | Desempate aleatório | liga/desliga | Desligado, o bot sempre escolhe a primeira jogada entre as de mesmo valor e fica previsível |
 | Bot contra bot | liga/desliga + seletor de nível para cada lado | O bot joga sozinho dos dois lados, com um pequeno intervalo entre jogadas. Nível 4 contra nível 4 deve sempre empatar |
 | Velocidade do bot | Instantâneo / Normal / Lento | Atraso visual antes da jogada do bot, só na interface; não afeta o algoritmo |
@@ -214,6 +226,7 @@ Esboço; os nomes podem mudar, mas o formato (estado completo em JSON a cada res
 | `POST` | `/matches` | Cria uma partida com nível e configurações; se o bot começar, já joga. Devolve `id` e estado |
 | `GET` | `/matches/{id}` | Estado atual |
 | `POST` | `/matches/{id}/moves` | Recebe a posição do humano; devolve o estado já com a resposta do bot e as estatísticas da busca |
+| `POST` | `/matches/{id}/bot-moves` | Faz uma jogada do bot; usado no modo bot contra bot, em que a interface pede cada jogada com um intervalo |
 | `GET` | `/matches/{id}/analysis` | Valor do minimax para cada casa vazia (para "Mostrar avaliação das casas") |
 
 O estado devolvido deve conter, no mínimo: tabuleiro, jogador da vez, se terminou, vencedor (ou empate), última jogada do bot e configurações da partida. Jogadas inválidas retornam erro HTTP 400 com a mensagem do `ValueError`.
@@ -222,15 +235,15 @@ O estado devolvido deve conter, no mínimo: tabuleiro, jogador da vez, se termin
 
 - [ ] Permitir escolher o nível e o símbolo (X/O) no início da partida, no terminal
 - [ ] Testes automatizados para `TicTacToe` e para o minimax (ex.: nível 4 contra nível 4 sempre empata)
-- [ ] Coleta de estatísticas da busca (estados visitados, tempo) em `algorithms/`
+- [x] Coleta de estatísticas da busca (estados visitados, tempo) em `algorithms/`
 - [ ] Script de simulação em `tools/`: partidas em massa entre níveis e contra um jogador aleatório, para calibrar as probabilidades de erro
-- [ ] Método `board()` no `TicTacToe`, retornando uma cópia do tabuleiro
-- [ ] Classe `Match` em `services/`
-- [ ] API web (FastAPI ou Flask) em `api/`
-- [ ] Interface web em `web/`, seguindo a especificação acima
-- [ ] Opções do painel de demonstração do minimax
+- [x] Método `board()` no `TicTacToe`, retornando uma cópia do tabuleiro
+- [x] Classe `Match` em `services/`
+- [x] API web (FastAPI ou Flask) em `api/`
+- [x] Interface web em `web/`, seguindo a especificação acima
+- [x] Opções do painel de demonstração do minimax (exceto "Preferir vitórias rápidas", que exigiria alterar o `minimax`)
 - [ ] *(Opcional, após avaliação)* poda alfa-beta, com comparativo de desempenho
-- [ ] Adicionar `requirements.txt` quando surgirem dependências
+- [x] Adicionar `requirements.txt` quando surgirem dependências
 
 ## Diretrizes para contribuir
 
