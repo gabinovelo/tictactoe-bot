@@ -1,2 +1,12 @@
+[project]
+name = "tictactoe-bot"
+version = "0.1.0"
+description = "bot de jogo da velha utilizando minimax"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    # "flask"
+]
+
 [tool.vercel]
 entrypoint = "src.api.app:app"
