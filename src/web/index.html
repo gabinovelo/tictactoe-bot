@@ -18,10 +18,46 @@
   </header>
 
   <main>
-    <div id="board" class="board" role="grid" aria-label="Tabuleiro"></div>
-    <p id="status" class="status" aria-live="polite"></p>
-    <p id="stats" class="stats" hidden></p>
-    <button id="new-match" class="primary">Nova partida</button>
+    <div class="layout">
+      <section class="game" aria-label="Partida">
+        <div id="board" class="board" role="grid" aria-label="Tabuleiro"></div>
+        <p id="analysis-note" class="analysis-note" hidden>
+          Números: score do bot (MAX). Cores: verde = você vence; vermelho = bot vence.
+        </p>
+        <p id="status" class="status" aria-live="polite"></p>
+        <p id="stats" class="stats" hidden></p>
+        <button id="new-match" class="primary">Nova partida</button>
+      </section>
+
+      <aside id="tree-panel" class="tree-panel" aria-labelledby="tree-title" hidden>
+        <header class="tree-head">
+          <div class="tree-head-top">
+            <h2 id="tree-title">Árvore de busca</h2>
+            <button id="tree-fullscreen" class="icon-btn tree-expand" type="button"
+                    aria-label="Expandir árvore para toda a tela" aria-pressed="false"
+                    title="Tela cheia">
+              <svg class="icon-expand" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4H4v5M15 4h5v5M20 15v5h-5M4 15v5h5"/></svg>
+              <svg class="icon-compress" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h5V4M20 9h-5V4M15 20v-5h5M9 20v-5H4"/></svg>
+            </button>
+          </div>
+          <div class="tree-tabs" role="tablist" aria-label="Árvore exibida">
+            <button id="tree-player-tab" class="tree-tab is-active" type="button"
+                    role="tab" aria-selected="true" data-tree="player">Suas opções</button>
+            <button id="tree-bot-tab" class="tree-tab" type="button"
+                    role="tab" aria-selected="false" data-tree="bot">Jogada do bot</button>
+          </div>
+          <p id="tree-legend" class="tree-legend">
+            Números: score do bot (MAX). Cores: verde = você vence; vermelho = bot vence.
+          </p>
+          <p id="tree-info" class="tree-info"></p>
+        </header>
+        <div id="tree-viewport" class="tree-viewport" tabindex="0"
+             aria-label="Árvore de busca do minimax; arraste para navegar">
+          <div id="tree-canvas" class="tree-canvas"></div>
+          <p id="tree-message" class="tree-message">Aguardando a partida…</p>
+        </div>
+      </aside>
+    </div>
   </main>
 
   <div id="backdrop" class="backdrop" hidden></div>
@@ -61,16 +97,26 @@
 
     <section>
       <h3>Demonstração do minimax</h3>
+      <div data-option="show_tree">
+        <label class="row">
+          <span>Mostrar árvore de busca</span>
+          <input type="checkbox" class="switch" id="show-tree">
+        </label>
+        <p class="hint">
+          Exibe as possibilidades da posição atual e a árvore que decidiu a última
+          jogada do bot, com scores do bot (MAX) e cores na sua perspectiva.
+        </p>
+      </div>
       <div data-option="show_analysis">
         <label class="row">
           <span>Mostrar avaliação das casas</span>
           <input type="checkbox" class="switch" id="show-analysis">
         </label>
         <p class="hint">
-          Na sua vez, cada casa vazia mostra o valor do minimax para você:
-          <span class="chip win">+ vitória</span>
-          <span class="chip draw">0 empate</span>
-          <span class="chip loss">− derrota</span>
+          Na sua vez, cada casa mostra o score do bot (MAX). As cores são para você:
+          <span class="chip win">negativo: você vence</span>
+          <span class="chip draw">0: empate</span>
+          <span class="chip loss">positivo: bot vence</span>
         </p>
       </div>
       <div data-option="search_stats">

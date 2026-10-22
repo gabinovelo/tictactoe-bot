@@ -2,7 +2,7 @@
 import time
 
 from models.tictactoe import TicTacToe
-from algorithms.minimax import best_move, minimax
+from algorithms.minimax import minimax, search_root
 from algorithms.stats import CountingGame, SearchStats
 
 
@@ -11,27 +11,25 @@ def choose_move(
     depth: int,
     random_tiebreak: bool = True,
     stats: SearchStats | None = None,
+    tree_out: dict | None = None,
 ) -> int:
-    """Como best_move, mas com estatísticas e desempate opcional.
+    """Escolhe a jogada do bot, com estatísticas e árvore opcional.
 
-    Com random_tiebreak=True chama o próprio best_move. Desligado, avalia as
-    casas em ordem e fica com a primeira de maior valor (bot previsível).
+    `tree_out`, quando passado, é preenchido com a árvore da busca (raiz,
+    filhos, tabuleiros, scores e nós terminais). Sem ele, nada é construído.
     """
     start = time.perf_counter()
     counter = CountingGame(game)
     positions = game.valid_positions()
 
-    if random_tiebreak:
-        pos = best_move(counter, depth)
-    else:
-        bot = game.current_player()
-        pos, best_score = None, float("-inf")
-        for p in positions:
-            counter.move(p)
-            s = minimax(counter, bot, depth - 1)
-            counter.undo()
-            if s > best_score:
-                pos, best_score = p, s
+    pos, root = search_root(
+        counter,
+        depth,
+        random_tiebreak=random_tiebreak,
+        build_tree=tree_out is not None,
+    )
+    if tree_out is not None and root is not None:
+        tree_out.update(root)
 
     if stats is not None:
         stats.states_visited = counter.moves
