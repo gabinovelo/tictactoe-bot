@@ -5,8 +5,8 @@ description = "bot de jogo da velha utilizando minimax"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
-    # "flask"
+    "flask==3.1.3",
 ]
 
 [tool.vercel]
-entrypoint = "src.api.app:app"
+entrypoint = "wsgi:app"
