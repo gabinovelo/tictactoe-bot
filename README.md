@@ -4,6 +4,11 @@ Jogo da velha em Python com um bot baseado no algoritmo **minimax**, com quatro 
 
 **Jogue online:** [[link do site]](https://tictactoe-bot-beta.vercel.app/)
 
+## Apresentação
+
+Os slides usados na apresentação do projeto estão em
+[docs/apresentacao-minimax.pdf](docs/apresentacao-minimax.pdf).
+
 ## Como rodar localmente
 
 Requisitos: **Python 3.10 ou superior**.
