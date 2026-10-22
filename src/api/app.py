@@ -52,6 +52,7 @@ def config():
             "alphabeta": False,  # poda ainda não implementada
             "show_analysis": True,
             "search_stats": True,
+            "show_tree": True,
             "random_tiebreak": True,
             "bot_vs_bot": True,
         },

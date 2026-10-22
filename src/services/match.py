@@ -2,7 +2,8 @@ import threading
 import uuid
 
 from models.tictactoe import TicTacToe
-from algorithms.bot import LEVELS, bot_move
+from algorithms.bot import LEVELS, TREE_MAX_EMPTY, bot_move
+from algorithms.minimax import build_position_tree
 from algorithms.search import evaluate_moves
 from algorithms.stats import SearchStats
 
@@ -38,12 +39,17 @@ class Match:
         self._first_player = first_player
         self._last_bot_move: int | None = None
         self._last_bot_stats: SearchStats | None = None
+        self._last_bot_tree: dict | None = None
+        self._last_bot_tree_status = "none"
+        self._current_tree: dict | None = None
+        self._current_tree_status = "too_large"
         # o servidor atende requisições em paralelo, e o minimax mexe no
         # tabuleiro (move/undo): só uma operação por vez em cada partida
         self._lock = threading.Lock()
 
         with self._lock:
             self._play_bots_until_human()
+            self._refresh_current_tree()
 
     @classmethod
     def human_vs_bot(
@@ -80,10 +86,56 @@ class Match:
     def _play_bot_once(self) -> None:
         stats = SearchStats()
         level = self._players[self._game.current_player()]
-        pos = bot_move(self._game, level, self._random_tiebreak, stats)
+        empty_cells = len(self._game.valid_positions())
+        capture_tree = empty_cells <= TREE_MAX_EMPTY
+        tree = {} if capture_tree else None
+
+        pos = bot_move(
+            self._game,
+            level,
+            self._random_tiebreak,
+            stats,
+            tree_out=tree,
+        )
         self._game.move(pos)
         self._last_bot_move = pos
         self._last_bot_stats = stats
+
+        if not capture_tree:
+            self._last_bot_tree = None
+            self._last_bot_tree_status = "too_large"
+        elif stats.random_move:
+            # o bot errou de propósito: não houve busca para desenhar
+            self._last_bot_tree = None
+            self._last_bot_tree_status = "random_move"
+        else:
+            self._last_bot_tree = tree
+            self._last_bot_tree_status = "available"
+
+    def _reference_bot(self) -> str:
+        """Símbolo usado como referência nos scores da árvore."""
+        for symbol, who in self._players.items():
+            if who != HUMAN:
+                return symbol
+        return self._game.current_player()
+
+    def _refresh_current_tree(self) -> None:
+        """Árvore da posição atual: as jogadas de quem deve jogar agora."""
+        if self._game.is_over():
+            self._current_tree = None
+            self._current_tree_status = "game_over"
+            return
+
+        empty_cells = len(self._game.valid_positions())
+        if empty_cells > TREE_MAX_EMPTY:
+            self._current_tree = None
+            self._current_tree_status = "too_large"
+            return
+
+        self._current_tree = build_position_tree(
+            self._game, self._reference_bot(), depth=9
+        )
+        self._current_tree_status = "available"
 
     def _play_bots_until_human(self) -> None:
         if not self._has_human():
@@ -99,6 +151,7 @@ class Match:
                 raise ValueError("it is not the human's turn")
             self._game.move(position)
             self._play_bots_until_human()
+            self._refresh_current_tree()
 
     def play_bot(self) -> None:
         with self._lock:
@@ -107,6 +160,7 @@ class Match:
             if self._is_human_turn():
                 raise ValueError("it is the human's turn")
             self._play_bot_once()
+            self._refresh_current_tree()
 
     def analysis(self) -> dict[int, int]:
         """Valor de cada casa vazia para o humano (positivo: vitória)."""
@@ -132,6 +186,10 @@ class Match:
                 "last_bot_stats": (
                     self._last_bot_stats.to_dict() if self._last_bot_stats else None
                 ),
+                "last_bot_tree": self._last_bot_tree,
+                "last_bot_tree_status": self._last_bot_tree_status,
+                "current_tree": self._current_tree,
+                "current_tree_status": self._current_tree_status,
                 "settings": {
                     "players": dict(self._players),
                     "first_player": self._first_player,

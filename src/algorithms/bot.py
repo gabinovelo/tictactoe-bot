@@ -3,6 +3,8 @@ from models.tictactoe import TicTacToe
 from algorithms.search import choose_move
 from algorithms.stats import SearchStats
 
+TREE_MAX_EMPTY = 5
+
 LEVELS = {
     1: {"depth": 1, "error": 0.0},
     2: {"depth": 2, "error": 0.25},
@@ -10,11 +12,13 @@ LEVELS = {
     4: {"depth": 9, "error": 0.0},
 }
 
+
 def bot_move(
     game: TicTacToe,
     level: int,
     random_tiebreak: bool = True,
     stats: SearchStats | None = None,
+    tree_out: dict | None = None,
 ) -> int:
     if level not in LEVELS:
         raise ValueError(f"invalid level: {level}")
@@ -26,4 +30,4 @@ def bot_move(
             stats.random_move = True
         return random.choice(game.valid_positions())
 
-    return choose_move(game, config["depth"], random_tiebreak, stats)
+    return choose_move(game, config["depth"], random_tiebreak, stats, tree_out)
