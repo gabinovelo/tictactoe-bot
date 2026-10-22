@@ -7,7 +7,7 @@ Jogo da velha em Python com um bot baseado no algoritmo **minimax**, com quatro 
 ## Apresentação
 
 Os slides usados na apresentação do projeto estão em
-[docs/apresentacao-minimax.pdf](docs/apresentacao-minimax.pdf).
+[docs/tictactoe_minimax.pdf](docs/tictactoe_minimax.pdf).
 
 ## Como rodar localmente
 
