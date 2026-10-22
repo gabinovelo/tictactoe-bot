@@ -33,7 +33,7 @@ let activeTree = "player";      // árvore exibida: "player" ou "bot"
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // medidas compartilhadas com o CSS da árvore
-const TREE = { nodeW: 120, nodeH: 112, gapX: 18, levelH: 142, pad: 24 };
+const TREE = { nodeW: 96, nodeH: 112, gapX: 18, levelH: 142, pad: 24 };
 const pan = {
   x: 0, y: 0, width: 0, height: 0,
   dragging: false, startX: 0, startY: 0, originX: 0, originY: 0,
@@ -180,11 +180,12 @@ function render() {
       if (drawn[i] !== mark) cell.classList.add("placed");
       cell.setAttribute("aria-label", `Casa ${i + 1}: ${mark}`);
     } else if (playable && analysis && i in analysis) {
-      // A API devolve o valor na perspectiva de quem joga (o humano). A tela
-      // mostra o score do bot, mas mantém as cores na perspectiva do jogador.
-      const humanValue = analysis[i];
-      const botValue = -humanValue;
-      const kind = humanValue > 0 ? "win" : humanValue < 0 ? "loss" : "draw";
+      // /analysis já chega na perspectiva humana; a mesma tradução usada na
+      // árvore é aplicada aqui para manter número e cor coerentes.
+      const raw = analysis[i];
+      const shown = scoreForUI(raw, "human");
+      const kind = scoreKind(shown);
+      const text = formatScoreForUI(raw, "human");
       const result = {
         win: "vitória sua",
         draw: "empate",
@@ -192,13 +193,13 @@ function render() {
       }[kind];
       const value = document.createElement("span");
       value.className = "value";
-      value.textContent = formatScore(botValue);
+      value.textContent = text;
       cell.append(value);
       cell.classList.add(`eval-${kind}`);
-      cell.title = `Score do bot: ${formatScore(botValue)} — ${result}`;
+      cell.title = `Minimax para você: ${text} — ${result}`;
       cell.setAttribute(
         "aria-label",
-        `Casa ${i + 1}: vazia, score do bot ${formatScore(botValue)}, ${result}`,
+        `Casa ${i + 1}: vazia, minimax para você ${text}, ${result}`,
       );
     } else {
       if (playable) cell.append(markSvg(human, "ghost"));
@@ -240,6 +241,22 @@ function formatScore(value) {
   return "0";
 }
 
+// A API entrega dois pontos de vista: /analysis em POV humano e a árvore em
+// POV do bot. Toda a UI passa por aqui para exibir sempre POV humano
+// (ou POV do bot de referência no modo bot contra bot).
+function scoreForUI(rawScore, rawPerspective, uiPerspective = "human") {
+  const value = Number(rawScore) || 0;
+  return rawPerspective === uiPerspective ? value : -value;
+}
+
+function formatScoreForUI(rawScore, rawPerspective, uiPerspective = "human") {
+  return formatScore(scoreForUI(rawScore, rawPerspective, uiPerspective));
+}
+
+function scoreKind(value) {
+  return value > 0 ? "win" : value < 0 ? "loss" : "draw";
+}
+
 function setTreeMessage(text) {
   el.treeCanvas.replaceChildren();
   el.treeCanvas.style.transform = "";
@@ -273,7 +290,7 @@ function turnSymbol(board) {
 }
 
 function turnLabel(data, human) {
-  if (human) return data.player === "MIN" ? "MIN · Sua Vez" : "MAX · Vez do Bot";
+  if (human) return data.player === "MIN" ? "Sua Vez" : "Vez do Bot";
   // Bot contra bot: não há humano, então identifica o símbolo da vez.
   return `Vez do ${turnSymbol(data.board)}`;
 }
@@ -283,13 +300,15 @@ function treeNode(data, item, score, human) {
   node.className = "tree-node";
   if (item.parent === null) node.classList.add("root");
 
-  // O backend pontua sempre a favor do bot. Na tela, invertemos apenas a
-  // leitura visual: score negativo = sucesso do humano; positivo = ameaça.
-  const displayScore = human ? -score : score;
+  // O backend pontua sempre a favor do bot; a UI exibe POV humano. No modo
+  // bot contra bot, a perspectiva exibida é a do bot de referência.
+  const uiPerspective = human ? "human" : "bot";
+  const shown = scoreForUI(score, "bot", uiPerspective);
+  const text = formatScoreForUI(score, "bot", uiPerspective);
 
   if (data.terminal) {
     node.classList.add("terminal");
-    node.classList.add(displayScore > 0 ? "win" : displayScore < 0 ? "loss" : "draw");
+    node.classList.add(scoreKind(shown));
   } else if (data.cutoff) {
     node.classList.add("cutoff");
   }
@@ -307,7 +326,7 @@ function treeNode(data, item, score, human) {
   player.textContent = label;
   const value = document.createElement("span");
   value.className = "node-score";
-  value.textContent = formatScore(score);
+  value.textContent = text;
   head.append(player, value);
 
   const foot = document.createElement("div");
@@ -318,12 +337,12 @@ function treeNode(data, item, score, human) {
 
   const result = !data.terminal
     ? "não terminal"
-    : score === 0
+    : shown === 0
       ? "empate"
       : human
-        ? (score > 0 ? "derrota para você" : "vitória para você")
-        : (score > 0 ? "vitória do bot" : "derrota do bot");
-  node.title = `${label}: score do bot ${score} (${result})`;
+        ? (shown > 0 ? "vitória para você" : "derrota para você")
+        : (shown > 0 ? "vitória do bot" : "derrota do bot");
+  node.title = `${label}: minimax ${human ? "para você" : "do bot"} ${text} (${result})`;
   node.setAttribute("aria-label", node.title);
 
   node.append(head, miniBoard(data.board), foot);
@@ -344,8 +363,8 @@ function renderTree(current) {
 
   const human = humanSymbol();
   el.treeLegend.textContent = human
-    ? "Números: score do bot (MAX). Cores: verde = você vence; vermelho = bot vence."
-    : "Números: score do bot de referência (MAX). Cores: verde = ele vence; vermelho = ele perde.";
+    ? "Números e cores na sua perspectiva: verde = vitória sua; vermelho = derrota sua. Bot = MAX; você = MIN."
+    : "Números e cores na perspectiva do bot de referência: verde = vitória dele; vermelho = derrota dele.";
 
   const fromBot = activeTree === "bot";
   const tree = current && (fromBot ? current.last_bot_tree : current.current_tree);

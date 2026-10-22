@@ -22,7 +22,7 @@
       <section class="game" aria-label="Partida">
         <div id="board" class="board" role="grid" aria-label="Tabuleiro"></div>
         <p id="analysis-note" class="analysis-note" hidden>
-          Números: score do bot (MAX). Cores: verde = você vence; vermelho = bot vence.
+          Números e cores na sua perspectiva: verde = você vence; vermelho = bot vence.
         </p>
         <p id="status" class="status" aria-live="polite"></p>
         <p id="stats" class="stats" hidden></p>
@@ -47,7 +47,7 @@
                     role="tab" aria-selected="false" data-tree="bot">Jogada do bot</button>
           </div>
           <p id="tree-legend" class="tree-legend">
-            Números: score do bot (MAX). Cores: verde = você vence; vermelho = bot vence.
+            Números e cores na sua perspectiva: verde = você vence; vermelho = bot vence.
           </p>
           <p id="tree-info" class="tree-info"></p>
         </header>
@@ -104,7 +104,7 @@
         </label>
         <p class="hint">
           Exibe as possibilidades da posição atual e a árvore que decidiu a última
-          jogada do bot, com scores do bot (MAX) e cores na sua perspectiva.
+          jogada do bot, com números e cores na sua perspectiva.
         </p>
       </div>
       <div data-option="show_analysis">
@@ -113,10 +113,10 @@
           <input type="checkbox" class="switch" id="show-analysis">
         </label>
         <p class="hint">
-          Na sua vez, cada casa mostra o score do bot (MAX). As cores são para você:
-          <span class="chip win">negativo: você vence</span>
-          <span class="chip draw">0: empate</span>
-          <span class="chip loss">positivo: bot vence</span>
+          Na sua vez, cada casa vazia mostra o valor do minimax para você:
+          <span class="chip win">+ vitória</span>
+          <span class="chip draw">0 empate</span>
+          <span class="chip loss">− derrota</span>
         </p>
       </div>
       <div data-option="search_stats">

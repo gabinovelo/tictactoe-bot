@@ -35,7 +35,7 @@ Na interface web, clique numa casa para jogar. No canto superior ficam o **menu 
 | Quem começa | Você ou o bot |
 | Seu símbolo | X ou O |
 | Mostrar árvore de busca | Exibe o painel lateral com as possibilidades da posição e a árvore da última jogada do bot |
-| Mostrar avaliação das casas | Na sua vez, mostra o score do bot (MAX) para cada casa vazia, com cores na perspectiva do jogador |
+| Mostrar avaliação das casas | Na sua vez, mostra o valor do minimax para você em cada casa vazia, com números e cores na sua perspectiva |
 | Estatísticas da busca | Após cada jogada do bot, mostra estados visitados, profundidade e tempo |
 | Desempate aleatório | Desligado, o bot sempre escolhe a primeira entre as jogadas de mesmo valor e fica previsível |
 | Bot contra bot | O bot joga sozinho dos dois lados, com um nível para cada |
@@ -43,7 +43,7 @@ Na interface web, clique numa casa para jogar. No canto superior ficam o **menu 
 
 Com a opção **Mostrar árvore de busca** habilitada, aparece ao lado do tabuleiro a **árvore de busca**, com duas abas: **Suas opções** mostra as jogadas possíveis de quem deve jogar agora, e **Jogada do bot** mostra a busca que decidiu a última jogada do bot. As árvores só aparecem quando restam 5 ou menos casas vazias; antes disso, o painel avisa que a árvore é grande demais. Arraste o fundo do painel para navegar e use o botão de expandir para ocupar toda a tela (`Esc` sai).
 
-Os números seguem a perspectiva do bot (MAX), como no slide: score positivo é bom para o bot e negativo é bom para você. As cores seguem a perspectiva do jogador: folhas verdes são vitória sua, vermelhas são vitória do bot e brancas são empate. Os nós mostram **MAX · Vez do Bot** ou **MIN · Sua Vez**. O tabuleiro usa a mesma convenção numérica, então o valor de uma casa e o nó correspondente na árvore têm o mesmo sinal. No slide, a raiz do exemplo é a vez do bot (MAX); aqui, a aba **Suas opções** parte da sua vez (MIN) porque é o turno atual.
+Os números e as cores seguem a perspectiva do jogador: valores positivos são vantagem sua, negativos são vantagem do bot, e zero é empate. Folhas verdes são vitória sua, vermelhas são derrota sua e brancas são empate. O tabuleiro e a árvore usam a mesma tradução no frontend, então o valor de uma casa e o nó correspondente têm o mesmo sinal. No modelo teórico, o bot é **MAX** e você é **MIN**; no slide, os scores aparecem na perspectiva do bot, enquanto a interface os traduz para a sua. A aba **Suas opções** parte da sua vez porque é o turno atual.
 
 No terminal, você joga com **X** e começa, contra o bot no nível 2. As casas são numeradas de 0 a 8:
 
